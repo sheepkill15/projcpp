@@ -4,6 +4,9 @@
 	"displayName": "ProjCpp",
 	"description": "C++ project manager and code runner",
 	"version": "0.0.1",
+	"repository": {
+		"url": "https://github.com/sheepkill15/projcpp"
+	},
 	"engines": {
 		"vscode": "^1.53.0"
 	},
