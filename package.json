@@ -14,7 +14,8 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:projcpp.runCode"
+		"onCommand:projcpp.runCode",
+		"onCommand:projcpp.projects"
 	],
 	"main": "./dist/extension.js",
 	"contributes": {
@@ -35,6 +36,11 @@
 				"command": "projcpp.runCode",
 				"title": "Run Code",
 				"icon": "./media/play-outline.svg"
+			},
+			{
+				"command": "projcpp.projects",
+				"title": "Open projects",
+				"category": "ProjCpp"
 			}
 		],
 		"menus": {
