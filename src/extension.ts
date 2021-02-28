@@ -3,15 +3,28 @@
 import * as vscode from 'vscode';
 import ProjectsPanel from './ProjectPanel';
 import CodeRunner from './runcode';
+import { SidebarProvider } from './SidebarProvider';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
 	const runner = new CodeRunner();
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "projcpp" is now active!');
+
+	const sidebarProvider = new SidebarProvider(context.extensionUri);
+
+	const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
+	item.text = '$(add) Add project';
+	item.command = 'projcpp.addProject';
+	item.tooltip = 'Add currently opened folder as project';
+	item.show();
+
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(
+			'projcpp-sidebar',
+			sidebarProvider,
+		)
+	);
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -26,6 +39,25 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(vscode.commands.registerCommand('projcpp.projects', () => {
 		ProjectsPanel.createOrShow(context.extensionUri);
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('projcpp.refresh', async () => {
+		// ProjectsPanel.kill();
+		// ProjectsPanel.createOrShow(context.extensionUri);
+		await vscode.commands.executeCommand('workbench.action.closeSidebar');
+		await vscode.commands.executeCommand('workbench.view.extension.projcpp-sidebar-view');
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('projcpp.addProject', () => {
+		const {workspaceFolders} = vscode.workspace;
+		if(!workspaceFolders) {
+			vscode.window.showInformationMessage('No open folder!');
+			return;
+		}
+		sidebarProvider.getView()?.webview.postMessage({
+			command: 'add-project',
+			value: workspaceFolders[0].uri.fsPath,
+		});
 	}));
 }
 

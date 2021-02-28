@@ -6,7 +6,8 @@ function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
 		enableScripts: true,
 
 		// And restrict the webview to only loading content from our extension's `media` directory.
-		localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')]
+		localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media'),
+                            vscode.Uri.joinPath(extensionUri, 'out/compiled')]
 	};
 }
 
@@ -46,6 +47,11 @@ class ProjectsPanel {
 
 		ProjectsPanel.currentPanel = new ProjectsPanel(panel, extensionUri);
 	}
+
+    public static kill() {
+        ProjectsPanel.currentPanel?.dispose();
+        ProjectsPanel.currentPanel = undefined;
+      }
 
 	public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
 		ProjectsPanel.currentPanel = new ProjectsPanel(panel, extensionUri);
@@ -115,7 +121,7 @@ class ProjectsPanel {
 
 	private _getHtmlForWebview(webview: vscode.Webview) {
 		// Local path to main script run in the webview
-		const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js');
+		const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'out/compiled', 'Projects.js');
 
 		// And the uri we use to load this script in the webview
 		const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
@@ -146,8 +152,8 @@ class ProjectsPanel {
 				<title>Cat Coding</title>
 			</head>
 			<body>
-				<h1>Hello world</h1>
 			</body>
+            <script src="${scriptUri}" nonce="${nonce}">
 			</html>`;
 	}
 }
