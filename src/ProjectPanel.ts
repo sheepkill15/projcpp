@@ -7,7 +7,7 @@ function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
 
 		// And restrict the webview to only loading content from our extension's `media` directory.
 		localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media'),
-                            vscode.Uri.joinPath(extensionUri, 'out/compiled')]
+                            vscode.Uri.joinPath(extensionUri, 'dist/compiled')]
 	};
 }
 
@@ -121,7 +121,7 @@ class ProjectsPanel {
 
 	private _getHtmlForWebview(webview: vscode.Webview) {
 		// Local path to main script run in the webview
-		const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'out/compiled', 'Projects.js');
+		const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'dist/compiled', 'Projects.js');
 
 		// And the uri we use to load this script in the webview
 		const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
