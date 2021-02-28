@@ -11,13 +11,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const runner = new CodeRunner();
 
-	const sidebarProvider = new SidebarProvider(context.extensionUri);
+	const sidebarProvider = new SidebarProvider(context);
 
-	const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
-	item.text = '$(add) Add project';
-	item.command = 'projcpp.addProject';
-	item.tooltip = 'Add currently opened folder as project';
-	item.show();
+	// const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
+	// item.text = 'Add project';
+	// item.command = 'projcpp.addProject';
+	// item.tooltip = 'Add currently opened folder as project';
+	// item.show();
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(

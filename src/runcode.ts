@@ -26,7 +26,7 @@ class CodeRunner {
         const where = this.isWin ? 'where' : 'whereis';
         const savedCommand: string | undefined = vscode.workspace.getConfiguration().get('conf.projcpp.compileCommand');
         if (savedCommand) {
-            if (fs.existsSync(savedCommand) || await CodeRunner.checkIfCommand(where + savedCommand)) {
+            if (fs.existsSync(savedCommand) || savedCommand === 'g++' || savedCommand === 'gcc') {
 
                 this.compileCommand = savedCommand;
                 this.finishInit();
