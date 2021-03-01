@@ -26,7 +26,7 @@ class CodeRunner {
         const where = this.isWin ? 'where' : 'whereis';
         const savedCommand: string | undefined = vscode.workspace.getConfiguration().get('conf.projcpp.compileCommand');
         if (savedCommand) {
-            if (fs.existsSync(savedCommand) || savedCommand === 'g++' || savedCommand === 'gcc') {
+            if (fs.existsSync(savedCommand) || await CodeRunner.checkIfCommand(where + ' ' + savedCommand)) {
 
                 this.compileCommand = savedCommand;
                 this.finishInit();
@@ -161,9 +161,17 @@ class CodeRunner {
         } else { this.lastRunCommand = null; }
 
         const term = vscode.window.activeTerminal ? vscode.window.activeTerminal : vscode.window.createTerminal();
+        console.log('Terminal created!');
         const dir = CodeRunner.getDir(fileUri);
-        const shell: string | undefined = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
-        if (!shell) { return; }
+        console.log(dir);
+        let shell: string | undefined = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
+        console.log(shell);
+        if (!shell) {
+            if(fs.existsSync('C:\\Windows\\System32\\WindowsPowerShell')) {
+                shell = 'powershell';
+            }
+            else {shell = 'cmd';}
+        }
         const pwrshll = shell?.includes('powershell');
         const cmd = shell?.includes('cmd');
         //term.sendText(`cd "${dir}"`, true);
