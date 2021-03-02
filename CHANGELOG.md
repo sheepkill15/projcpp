@@ -5,6 +5,16 @@ All notable changes to the "ProjCpp" extension will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2021-03-02
+### Added
+- Pressing the run button will now save all open files
+
+### Fixed
+- Creating a new project didn't always create and open it
+
+### Changed
+- There's now a '!' symbol at the end of the sample program cout
+
 ## [1.0.2] - 2021-03-01
 ### Fixed
 - "Run code" didn't work when there was no default shell set on windows
