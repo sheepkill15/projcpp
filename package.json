@@ -2,8 +2,8 @@
 	"name": "projcpp",
 	"publisher": "simonaron",
 	"displayName": "ProjCpp",
-	"description": "C++ project manager and code runner",
-	"version": "1.0.2",
+	"description": "C++ project manager and build helper",
+	"version": "1.0.3",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/sheepkill15/projcpp"
