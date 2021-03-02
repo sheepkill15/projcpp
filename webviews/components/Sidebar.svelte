@@ -35,11 +35,11 @@
 
     const createProject = () => {
         if(text === '') return;
-        addProject(defaultLocation + text);
         const newValue = text.replace(/\//g, '\\').substring(text.replace(/\//g, '\\').lastIndexOf("\\") + 1);
         for(let i = 0; i < projects.length; i++) {
             if(projects[i].name === newValue) return;
         }
+        addProject(defaultLocation + text);
         tsvscode.postMessage({
             command: 'create-project',
             value: projects[0]

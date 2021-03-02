@@ -20,6 +20,7 @@ export const createProject = (project: {name: string; path: string;}) => {
     else {
         fs.mkdirSync(project.path, {recursive: true});
     }
+    console.log(project.path);
     vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(project.path));
     // .then(
     //     () => vscode.workspace.openTextDocument(vscode.Uri.file(project.path + '/main.cpp')).then((doc) => vscode.window.showTextDocument(doc))
