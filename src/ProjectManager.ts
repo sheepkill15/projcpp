@@ -13,9 +13,12 @@ int main()
 `;
 
 export const createProject = (project: {name: string; path: string;}) => {
-    fs.mkdirSync(project.path, {recursive: true});
-    if(!fs.existsSync(project.path + '/main.cpp')) {
+    if(!fs.existsSync(project.path)) {
+        fs.mkdirSync(project.path, {recursive: true});
         fs.appendFileSync(project.path + '/main.cpp', sampleFile);
+    }
+    else {
+        fs.mkdirSync(project.path, {recursive: true});
     }
     vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(project.path));
     // .then(
