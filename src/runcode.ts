@@ -160,12 +160,11 @@ class CodeRunner {
             return;
         } else { this.lastRunCommand = null; }
 
+        await vscode.workspace.saveAll();
+
         const term = vscode.window.activeTerminal ? vscode.window.activeTerminal : vscode.window.createTerminal();
-        console.log('Terminal created!');
         const dir = CodeRunner.getDir(fileUri);
-        console.log(dir);
         let shell: string | undefined = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
-        console.log(shell);
         if (!shell) {
             if(fs.existsSync('C:\\Windows\\System32\\WindowsPowerShell')) {
                 shell = 'powershell';
