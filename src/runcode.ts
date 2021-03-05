@@ -145,12 +145,7 @@ class CodeRunner {
         }
         return true;
     }
-
-    // static getDir(file: string): string {
-    //     file = file.replace(/\\/g, '/');
-    //     return file.substring(0, file.lastIndexOf("/") + 1);
-    // }
-
+    
     async run(fileUri: string): Promise<void> {
 
         if (this.compileCommand && (this.compileCommand.includes('/') || this.compileCommand.includes('\\')) && (!fs.existsSync(this.compileCommand) && !await CodeRunner.checkIfCommand(this.compileCommand))) {
