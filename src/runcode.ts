@@ -139,13 +139,13 @@ class CodeRunner {
     static async checkIfCommand(command: string): Promise<boolean> {
         try {
             const { stdout, stderr } = await execPromisified(command);
-            if (stderr.length > 0) { console.error(stderr); return false; }
+            if (stderr.length > 0) { console.error(stderr); }
         } catch (e) {
             return false;
         }
         return true;
     }
-    
+
     async run(fileUri: string): Promise<void> {
 
         if (this.compileCommand && (this.compileCommand.includes('/') || this.compileCommand.includes('\\')) && (!fs.existsSync(this.compileCommand) && !await CodeRunner.checkIfCommand(this.compileCommand))) {
