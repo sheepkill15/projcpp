@@ -16,6 +16,8 @@ class CodeRunner {
 
     private isWin: boolean;
 
+    private pathAdded: boolean = false;
+
     initialized: boolean = false;
 
     constructor() {
@@ -120,12 +122,13 @@ class CodeRunner {
         if (!this.compileCommand) { return; }
         await vscode.workspace.getConfiguration().update('conf.projcpp.compileCommand', this.compileCommand, vscode.ConfigurationTarget.Global);
         const winDirName = path.dirname(this.compileCommand);
-        if (this.isWin && (this.compileCommand.includes('/') || this.compileCommand.includes('\\')) && !process.env.PATH?.includes(winDirName)) {
+        if (!this.pathAdded && this.isWin && (this.compileCommand.includes('/') || this.compileCommand.includes('\\')) && !process.env.PATH?.includes(winDirName)) {
 
             const term = vscode.window.createTerminal({shellPath: 'C:\\Windows\\System32\\cmd.exe'});
             term.sendText(`for /f "skip=2 tokens=3*" %a in ('reg query HKCU\\Environment /v PATH') do @if [%b]==[] ( @setx PATH "${winDirName};%~a" ) else ( @setx PATH "${winDirName};%~a %~b" )`, true);
             term.sendText('exit', true);
             vscode.window.showInformationMessage('Added compiler to path. Please restart VSCode for this to work (only needed one time)');
+            this.pathAdded = true;
         }
         this.initialized = true;
         if (this.lastRunCommand) {
