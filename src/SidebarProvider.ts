@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { createProject, getProjects } from './ProjectManager';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
@@ -63,7 +64,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 								value: path,
 							});
 						});
-						this._context.globalState.update('projcpp.default-location', folder[0].fsPath + '\\');
+						this._context.globalState.update('projcpp.default-location', path.join(folder[0].fsPath, '/'));
 					}
 					break;
 				}

@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as path_module from 'path';
 
 const sampleFile = `#include <iostream>
+
 using namespace std;
 
 int main()
@@ -15,7 +17,7 @@ int main()
 export const createProject = (project: {name: string; path: string;}) => {
     if(!fs.existsSync(project.path)) {
         fs.mkdirSync(project.path, {recursive: true});
-        fs.appendFileSync(project.path + '/main.cpp', sampleFile);
+        fs.appendFileSync(path_module.join(project.path, 'main.cpp'), sampleFile);
     }
     else {
         fs.mkdirSync(project.path, {recursive: true});
@@ -37,7 +39,7 @@ export const getProjects = (path: string, callback: (path:string) => void, skip:
             }
         }
         for(let i = 0; i < files.length; i++) {
-            const fullPath = vscode.Uri.joinPath(vscode.Uri.file(path), files[i]).fsPath;
+            const fullPath = path_module.join(path, files[i]);
             fs.lstat(fullPath, (err, stats) => {
                 if(err) {
                     throw err;

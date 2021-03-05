@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as https from 'https';
 import * as sevenBin from '7zip-bin';
 import { extractFull } from 'node-7z';
+import * as path from 'path';
 const execPromisified = promisify(exec);
 class CodeRunner {
 
@@ -106,7 +107,7 @@ class CodeRunner {
 
                 file.close();
                 vscode.window.showInformationMessage('Extracted! Everything\'s ready to go!');
-                this.compileCommand = installPath[0].fsPath + '/mingw64/bin/g++.exe';
+                this.compileCommand = vscode.Uri.joinPath(installPath[0], 'mingw64/bin/g++.exe').fsPath;
             }
             else {
                 return;
@@ -118,7 +119,7 @@ class CodeRunner {
     async finishInit(): Promise<void> {
         if (!this.compileCommand) { return; }
         await vscode.workspace.getConfiguration().update('conf.projcpp.compileCommand', this.compileCommand, vscode.ConfigurationTarget.Global);
-        const winDirName = CodeRunner.getDir(this.compileCommand).replace(/\//g, '\\');
+        const winDirName = path.dirname(this.compileCommand);
         if (this.isWin && (this.compileCommand.includes('/') || this.compileCommand.includes('\\')) && !process.env.PATH?.includes(winDirName)) {
 
             const term = vscode.window.createTerminal({shellPath: 'C:\\Windows\\System32\\cmd.exe'});
@@ -142,10 +143,10 @@ class CodeRunner {
         return true;
     }
 
-    static getDir(file: string): string {
-        file = file.replace(/\\/g, '/');
-        return file.substring(0, file.lastIndexOf("/") + 1);
-    }
+    // static getDir(file: string): string {
+    //     file = file.replace(/\\/g, '/');
+    //     return file.substring(0, file.lastIndexOf("/") + 1);
+    // }
 
     async run(fileUri: string): Promise<void> {
 
@@ -163,7 +164,7 @@ class CodeRunner {
         await vscode.workspace.saveAll();
 
         const term = vscode.window.activeTerminal ? vscode.window.activeTerminal : vscode.window.createTerminal();
-        const dir = CodeRunner.getDir(fileUri);
+        const dir = path.dirname(fileUri);
         let shell: string | undefined = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
         if (!shell) {
             if(fs.existsSync('C:\\Windows\\System32\\WindowsPowerShell')) {
@@ -174,11 +175,12 @@ class CodeRunner {
         const pwrshll = shell?.includes('powershell');
         const cmd = shell?.includes('cmd');
         //term.sendText(`cd "${dir}"`, true);
-        if (!fs.existsSync(dir + 'bin')) {
-            term.sendText(`mkdir "${dir}bin"`, true);
+        if (!fs.existsSync(path.join(dir, 'bin'))) {
+            term.sendText('mkdir bin', true);
         }
-        term.sendText(`${pwrshll ? '&' : ''} "${this.compileCommand}" *.cpp -o bin/main.exe`, true);
-        term.sendText((this.isWin && (pwrshll || cmd) ? '.\\' : './') + 'bin' + (this.isWin && (pwrshll || cmd) ? '\\' : '/') + 'main.exe', true);
+        const mainExe = path.join('bin', 'main.exe');
+        term.sendText(`${pwrshll ? '&' : ''} "${this.compileCommand}" *.cpp -o ${mainExe}`, true);
+        term.sendText((this.isWin && (pwrshll || cmd) ? '.\\' : './') + mainExe, true);
         term.show();
     }
 }
