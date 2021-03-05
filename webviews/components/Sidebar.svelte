@@ -78,7 +78,7 @@
 <input bind:value={search} placeholder='Search in projects'/>
 <div class='project-container'>
     {#each projects as project (project.name)}
-        {#if project.name.includes(search)}
+        {#if project.path.toLowerCase().includes(search.toLowerCase())}
             <div class='project' on:click={() => tsvscode.postMessage({
                 command: 'create-project',
                 value: project
