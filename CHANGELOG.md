@@ -5,6 +5,17 @@ All notable changes to the "ProjCpp" extension will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2021-03-05
+### Added
+- Now it's possible to use arguments to compile command
+
+### Fixed
+- Recursive project paths
+- Doesn't add the same path to environment variables twice
+
+### Changed
+- Searching in projects now searches in the project paths (case insensitive)
+
 ## [1.0.3] - 2021-03-02
 ### Added
 - Pressing the run button will now save all open files
