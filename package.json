@@ -59,7 +59,7 @@
 			{
 				"command": "projcpp.runCode",
 				"title": "Run code",
-				"icon": "./media/play-outline.svg",
+				"icon": {"dark": "./media/play-outline.svg", "light": "./media/play-outline.svg"},
 				"category": "ProjCpp"
 			},
 			{
