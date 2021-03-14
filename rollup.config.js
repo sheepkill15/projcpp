@@ -42,6 +42,7 @@ export default fs
           browser: true,
           dedupe: ["svelte"],
         }),
+        
         commonjs(),
         typescript({
           tsconfig: "webviews/tsconfig.json",
