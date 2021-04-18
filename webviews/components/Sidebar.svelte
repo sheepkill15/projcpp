@@ -4,8 +4,8 @@
     let projects: Array<{ name: string; path: string }> = [];
     let text = "";
     let defaultLocation: string = tsvscode.getState()?.defaultLocation ?? savedDefaultLocation;
-    if(!defaultLocation.endsWith('\\')) {
-        defaultLocation += '\\';
+    if(!defaultLocation.endsWith(separator)) {
+        defaultLocation += separator;
     }
     let search = '';
 
@@ -26,7 +26,7 @@
                     break;
                 }
                 case 'giveFolder': {
-                    defaultLocation = message.value + '\\';
+                    defaultLocation = message.value + separator;
                     projects = [];
                 }
             }
@@ -35,7 +35,7 @@
 
     const createProject = () => {
         if(text === '') return;
-        const newValue = text.replace(/\//g, '\\').substring(text.replace(/\//g, '\\').lastIndexOf("\\") + 1);
+        const newValue = text.substring(text.lastIndexOf(separator) + 1);
         for(let i = 0; i < projects.length; i++) {
             if(projects[i].name === newValue) return;
         }
@@ -47,7 +47,7 @@
     }
 
     const addProject = (value: string) => {
-        const newValue = value.replace(/\//g, '\\').substring(value.replace(/\//g, '\\').lastIndexOf("\\") + 1);
+        const newValue = value.substring(value.lastIndexOf(separator) + 1);
         for(let i = 0; i < projects.length; i++) {
             if(projects[i].name === newValue) return;
         }

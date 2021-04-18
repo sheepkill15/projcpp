@@ -104,9 +104,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
 		const userPath = process.env.USERPROFILE ?? 'C:\\Users\\Public';
 
-		let defaultLocation: string = this._context.globalState.get('projcpp.default-location') ?? userPath + '\\Downloads\\';
+		let defaultLocation: string = this._context.globalState.get('projcpp.default-location') ?? path.join(userPath, '/Downloads', '/');
 		defaultLocation = defaultLocation.replace(/\\/g, '\\\\');
-
+		console.log(defaultLocation);
 		return `<!DOCTYPE html>
 			<html lang="en">
 			<head>
@@ -123,6 +123,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 				<script nonce=${nonce}>
                     const tsvscode = acquireVsCodeApi();
 					const savedDefaultLocation = "${defaultLocation}";
+					const separator = "${path.sep.replace(/\\/g, '\\\\')}"
                 </script>
 			</head>
 			<body>

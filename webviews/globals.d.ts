@@ -6,4 +6,5 @@ declare global {
         setState: (state: any) => void;
     };
     const savedDefaultLocation: string;
+    const separator: string;
 }
