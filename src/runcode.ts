@@ -188,7 +188,7 @@ class CodeRunner {
         const pwrshll = shell?.includes('powershell');
         const cmd = shell?.includes('cmd');
         //term.sendText(`cd "${dir}"`, true);
-        const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
+        const mainExe = `bin${(this.isWin && (pwrshll || cmd) ? '\\' : '/')}${this.isWin ? 'main.exe' : 'main.a'}`;
         term.sendText(`${this.isWin && pwrshll ? '&' : ''} ${compileCommand} *.cpp -o ${mainExe}`, true);
         term.sendText((this.isWin && (pwrshll || cmd) ? '.\\' : './') + mainExe, true);
         term.show();
