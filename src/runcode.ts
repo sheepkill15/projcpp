@@ -62,7 +62,7 @@ class CodeRunner {
                         canSelectMany: false,
                         canSelectFiles: true,
                     });
-                if (path) { modifiedCommand = path[0].fsPath; }
+                if (path) { modifiedCommand = `"${path[0].fsPath}"`; }
                 else { return; }
             }
             else if (response === 'Download') {
