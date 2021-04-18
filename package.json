@@ -4,6 +4,7 @@
 	"displayName": "ProjCpp",
 	"description": "C++ project manager and build helper",
 	"version": "1.1.1",
+	"icon": "media/project_icon.png",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/sheepkill15/projcpp"
