@@ -53,6 +53,16 @@
 						"scope": "application"
 					}
 				}
+			},
+			{
+				"title": "External terminal",
+				"properties": {
+					"conf.projcpp.externTerm": {
+						"type": "boolean",
+						"description": "Decides whether to open an external terminal on run or not",
+						"scope": "application"
+					}
+				}
 			}
 		],
 		"commands": [

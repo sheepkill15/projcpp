@@ -18,6 +18,8 @@ class CodeRunner {
 
     private pathAdded: boolean = false;
 
+    private externTerm: boolean = false;
+
     initialized: boolean = false;
 
     constructor() {
@@ -108,7 +110,6 @@ class CodeRunner {
                 });
 
                 file.close();
-                vscode.window.showInformationMessage('Extracted! Everything\'s ready to go!');
                 this.compileCommand = vscode.Uri.joinPath(installPath[0], 'mingw64/bin/g++.exe').fsPath;
             }
             else {
@@ -130,6 +131,7 @@ class CodeRunner {
             vscode.window.showInformationMessage('Added compiler to path. Please restart VSCode for this to work (only needed one time)');
             this.pathAdded = true;
         }
+
         this.initialized = true;
         if (this.lastRunCommand) {
             this.run(this.lastRunCommand);
@@ -160,8 +162,6 @@ class CodeRunner {
         } else { this.lastRunCommand = null; }
 
         await vscode.workspace.saveAll();
-
-        const term = vscode.window.activeTerminal ? vscode.window.activeTerminal : vscode.window.createTerminal();
         const dir = path.dirname(fileUri);
         let shell: string | undefined = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
         if (!shell) {
@@ -170,16 +170,37 @@ class CodeRunner {
             }
             else {shell = 'cmd';}
         }
+
+        this.externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
+        
+        if (!fs.existsSync(path.join(dir, 'bin'))) {
+            fs.mkdirSync(path.join(dir, 'bin'));
+        }
+        if(!this.externTerm) {
+            this.runInternal(fileUri, shell, dir);
+        }
+        else {
+            this.runExternal(fileUri, shell, dir);
+        }
+    }
+
+    async runInternal(fileUri: string, shell: string, dir: string) {
+
+        const term = vscode.window.activeTerminal ? vscode.window.activeTerminal : vscode.window.createTerminal();
         const pwrshll = shell?.includes('powershell');
         const cmd = shell?.includes('cmd');
         //term.sendText(`cd "${dir}"`, true);
-        if (!fs.existsSync(path.join(dir, 'bin'))) {
-            term.sendText('mkdir bin', true);
-        }
-        const mainExe = path.join('bin', 'main.exe');
-        term.sendText(`${pwrshll ? '&' : ''} "${this.compileCommand}" *.cpp -o ${mainExe}`, true);
+        const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
+        term.sendText(`${this.isWin && pwrshll ? '&' : ''} "${this.compileCommand}" *.cpp -o ${mainExe}`, true);
         term.sendText((this.isWin && (pwrshll || cmd) ? '.\\' : './') + mainExe, true);
         term.show();
+    }
+
+    async runExternal(fileUri: string, shell: string, dir: string) {
+        const pwrshll = shell?.includes('powershell');
+        const cmd = shell?.includes('cmd');
+        const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
+        exec(`start "ProjCpp" cmd.exe /K "cd /d ${dir} & ${this.compileCommand} *.cpp -o ${mainExe} & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`);
     }
 }
 export default CodeRunner;
