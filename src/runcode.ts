@@ -10,15 +10,11 @@ import * as path from 'path';
 const execPromisified = promisify(exec);
 class CodeRunner {
 
-    private compileCommand: string | undefined;
-
     private lastRunCommand: string | null = null;
 
     private isWin: boolean;
 
     private pathAdded: boolean = false;
-
-    private externTerm: boolean = false;
 
     initialized: boolean = false;
 
@@ -30,28 +26,27 @@ class CodeRunner {
 
         const where = this.isWin ? 'where' : 'whereis';
         const savedCommand: string | undefined = vscode.workspace.getConfiguration().get('conf.projcpp.compileCommand');
+        let modifiedCommand: string = '';
         if (savedCommand) {
             if (fs.existsSync(savedCommand) || await CodeRunner.checkIfCommand(where + ' ' + savedCommand)) {
-
-                this.compileCommand = savedCommand;
                 this.finishInit();
                 return;
             }
         }
         if (await CodeRunner.checkIfCommand(where + ' g++')) {
-            this.compileCommand = 'g++';
+            modifiedCommand = 'g++';
             vscode.window.showInformationMessage('Found g++!');
         }
         else if (await CodeRunner.checkIfCommand(where + ' gcc')) {
-            this.compileCommand = 'gcc';
+            modifiedCommand = 'gcc';
             vscode.window.showInformationMessage('Found gcc!');
         }
         else if (fs.existsSync('C:\\Program Files (x86)\\CodeBlocks\\MinGW')) {
-            this.compileCommand = 'C:\\Program Files (x86)\\CodeBlocks\\MinGW\\bin\\g++.exe';
+            modifiedCommand = '"C:\\Program Files (x86)\\CodeBlocks\\MinGW\\bin\\g++.exe"';
             vscode.window.showInformationMessage('Found 32bit CodeBlocks with MinGW!');
         }
         else if (fs.existsSync('C:\\Program Files\\CodeBlocks\\MinGW')) {
-            this.compileCommand = 'C:\\Program Files\\CodeBlocks\\MinGW\\bin\\g++.exe';
+            modifiedCommand = '"C:\\Program Files\\CodeBlocks\\MinGW\\bin\\g++.exe"';
             vscode.window.showInformationMessage('Found CodeBlocks with MinGW!');
         }
         else {
@@ -67,7 +62,7 @@ class CodeRunner {
                         canSelectMany: false,
                         canSelectFiles: true,
                     });
-                if (path) { this.compileCommand = path[0].fsPath; }
+                if (path) { modifiedCommand = path[0].fsPath; }
                 else { return; }
             }
             else if (response === 'Download') {
@@ -110,20 +105,21 @@ class CodeRunner {
                 });
 
                 file.close();
-                this.compileCommand = vscode.Uri.joinPath(installPath[0], 'mingw64/bin/g++.exe').fsPath;
+                modifiedCommand = '"' + vscode.Uri.joinPath(installPath[0], 'mingw64/bin/g++.exe').fsPath + '"';
             }
             else {
                 return;
             }
         }
+        await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", modifiedCommand, vscode.ConfigurationTarget.Global);
         this.finishInit();
     }
 
     async finishInit(): Promise<void> {
-        if (!this.compileCommand) { return; }
-        await vscode.workspace.getConfiguration().update('conf.projcpp.compileCommand', this.compileCommand, vscode.ConfigurationTarget.Global);
-        const winDirName = path.dirname(this.compileCommand);
-        if (!this.pathAdded && this.isWin && (this.compileCommand.includes('/') || this.compileCommand.includes('\\')) && !process.env.PATH?.includes(winDirName)) {
+        const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand");
+        if(!compileCommand) {return;}
+        const winDirName = path.dirname(compileCommand);
+        if (!this.pathAdded && this.isWin && (compileCommand.includes(path.sep)) && !process.env.PATH?.includes(winDirName)) {
 
             const term = vscode.window.createTerminal({shellPath: 'C:\\Windows\\System32\\cmd.exe'});
             term.sendText(`for /f "skip=2 tokens=3*" %a in ('reg query HKCU\\Environment /v PATH') do @if [%b]==[] ( @setx PATH "${winDirName};%~a" ) else ( @setx PATH "${winDirName};%~a %~b" )`, true);
@@ -149,17 +145,19 @@ class CodeRunner {
     }
 
     async run(fileUri: string): Promise<void> {
-
-        if (this.compileCommand && (this.compileCommand.includes('/') || this.compileCommand.includes('\\')) && (!fs.existsSync(this.compileCommand) && !await CodeRunner.checkIfCommand(this.compileCommand))) {
-            this.compileCommand = undefined;
-            this.initialized = false;
-            this.init();
-            return;
-        }
         if (!this.initialized) {
             this.lastRunCommand = fileUri;
             return;
         } else { this.lastRunCommand = null; }
+        
+        const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand");
+        if (!compileCommand || (compileCommand && (compileCommand.includes(path.sep)) && (!fs.existsSync(compileCommand) && !await CodeRunner.checkIfCommand(compileCommand)))) {
+            await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", undefined, vscode.ConfigurationTarget.Global);
+            this.initialized = false;
+            this.lastRunCommand = fileUri;
+            this.init();
+            return;
+        }
 
         await vscode.workspace.saveAll();
         const dir = path.dirname(fileUri);
@@ -171,36 +169,36 @@ class CodeRunner {
             else {shell = 'cmd';}
         }
 
-        this.externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
+        const externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
         
         if (!fs.existsSync(path.join(dir, 'bin'))) {
             fs.mkdirSync(path.join(dir, 'bin'));
         }
-        if(!this.externTerm) {
-            this.runInternal(fileUri, shell, dir);
+        if(!externTerm) {
+            this.runInternal(compileCommand ?? '', fileUri, shell, dir);
         }
         else {
-            this.runExternal(fileUri, shell, dir);
+            this.runExternal(compileCommand ?? '', fileUri, shell, dir);
         }
     }
 
-    async runInternal(fileUri: string, shell: string, dir: string) {
+    async runInternal(compileCommand: string, fileUri: string, shell: string, dir: string) {
 
         const term = vscode.window.activeTerminal ? vscode.window.activeTerminal : vscode.window.createTerminal();
         const pwrshll = shell?.includes('powershell');
         const cmd = shell?.includes('cmd');
         //term.sendText(`cd "${dir}"`, true);
         const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
-        term.sendText(`${this.isWin && pwrshll ? '&' : ''} "${this.compileCommand}" *.cpp -o ${mainExe}`, true);
+        term.sendText(`${this.isWin && pwrshll ? '&' : ''} ${compileCommand} *.cpp -o ${mainExe}`, true);
         term.sendText((this.isWin && (pwrshll || cmd) ? '.\\' : './') + mainExe, true);
         term.show();
     }
 
-    async runExternal(fileUri: string, shell: string, dir: string) {
+    async runExternal(compileCommand: string, fileUri: string, shell: string, dir: string) {
         const pwrshll = shell?.includes('powershell');
         const cmd = shell?.includes('cmd');
         const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
-        exec(`start "ProjCpp" cmd.exe /K "cd /d ${dir} & ${this.compileCommand} *.cpp -o ${mainExe} & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`);
+        exec(`start "ProjCpp" cmd.exe /K "cd /d ${dir} & ${compileCommand} *.cpp -o ${mainExe} & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, {cwd: dir});
     }
 }
 export default CodeRunner;
