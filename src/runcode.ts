@@ -28,7 +28,7 @@ class CodeRunner {
         const savedCommand: string | undefined = vscode.workspace.getConfiguration().get('conf.projcpp.compileCommand');
         let modifiedCommand: string = '';
         if (savedCommand) {
-            if (fs.existsSync(savedCommand) || await CodeRunner.checkIfCommand(where + ' ' + savedCommand)) {
+            if (fs.existsSync(savedCommand.replace(/\"/g, '')) || await CodeRunner.checkIfCommand(where + ' ' + savedCommand)) {
                 this.finishInit();
                 return;
             }
@@ -118,7 +118,7 @@ class CodeRunner {
     async finishInit(): Promise<void> {
         const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand");
         if (!compileCommand) { return; }
-        const winDirName = path.dirname(compileCommand);
+        const winDirName = path.dirname(compileCommand.replace(/\"/g, ''));
         if (!this.pathAdded && this.isWin && (compileCommand.includes(path.sep)) && !process.env.PATH?.includes(winDirName)) {
 
             const term = vscode.window.createTerminal({ shellPath: 'C:\\Windows\\System32\\cmd.exe' });
@@ -151,16 +151,15 @@ class CodeRunner {
         } else { this.lastRunCommand = null; }
         {
             const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand");
-            if (!compileCommand || (compileCommand && (compileCommand.includes(path.sep)) && (!fs.existsSync(compileCommand) && !await CodeRunner.checkIfCommand(compileCommand)))) {
+            if (!compileCommand || (compileCommand && (compileCommand.includes(path.sep)) && (!fs.existsSync(compileCommand.replace(/\"/g, '')) && !await CodeRunner.checkIfCommand(compileCommand)))) {
                 await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", undefined, vscode.ConfigurationTarget.Global);
                 this.initialized = false;
                 this.lastRunCommand = fileUri;
                 this.init();
                 return;
             }
-
             if (!compileCommand.endsWith('"') && fs.existsSync(compileCommand)) {
-                await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", compileCommand.startsWith('"') ? '' : '"' + compileCommand + compileCommand.endsWith('"') ? '' : '"');
+                await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", (compileCommand.startsWith('"') ? '' : '"') + compileCommand + (compileCommand.endsWith('"') ? '' : '"'), vscode.ConfigurationTarget.Global);
             }
         }
         const compileCommand: string = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand") ?? '';
