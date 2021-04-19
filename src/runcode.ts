@@ -117,11 +117,11 @@ class CodeRunner {
 
     async finishInit(): Promise<void> {
         const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand");
-        if(!compileCommand) {return;}
+        if (!compileCommand) { return; }
         const winDirName = path.dirname(compileCommand);
         if (!this.pathAdded && this.isWin && (compileCommand.includes(path.sep)) && !process.env.PATH?.includes(winDirName)) {
 
-            const term = vscode.window.createTerminal({shellPath: 'C:\\Windows\\System32\\cmd.exe'});
+            const term = vscode.window.createTerminal({ shellPath: 'C:\\Windows\\System32\\cmd.exe' });
             term.sendText(`for /f "skip=2 tokens=3*" %a in ('reg query HKCU\\Environment /v PATH') do @if [%b]==[] ( @setx PATH "${winDirName};%~a" ) else ( @setx PATH "${winDirName};%~a %~b" )`, true);
             term.sendText('exit', true);
             vscode.window.showInformationMessage('Added compiler to path. Please restart VSCode for this to work (only needed one time)');
@@ -149,32 +149,38 @@ class CodeRunner {
             this.lastRunCommand = fileUri;
             return;
         } else { this.lastRunCommand = null; }
-        
-        const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand");
-        if (!compileCommand || (compileCommand && (compileCommand.includes(path.sep)) && (!fs.existsSync(compileCommand) && !await CodeRunner.checkIfCommand(compileCommand)))) {
-            await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", undefined, vscode.ConfigurationTarget.Global);
-            this.initialized = false;
-            this.lastRunCommand = fileUri;
-            this.init();
-            return;
+        {
+            const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand");
+            if (!compileCommand || (compileCommand && (compileCommand.includes(path.sep)) && (!fs.existsSync(compileCommand) && !await CodeRunner.checkIfCommand(compileCommand)))) {
+                await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", undefined, vscode.ConfigurationTarget.Global);
+                this.initialized = false;
+                this.lastRunCommand = fileUri;
+                this.init();
+                return;
+            }
+
+            if (!compileCommand.endsWith('"') && fs.existsSync(compileCommand)) {
+                await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", compileCommand.startsWith('"') ? '' : '"' + compileCommand + compileCommand.endsWith('"') ? '' : '"');
+            }
         }
+        const compileCommand: string = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand") ?? '';
 
         await vscode.workspace.saveAll();
         const dir = path.dirname(fileUri);
         let shell: string | undefined = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
         if (!shell) {
-            if(fs.existsSync('C:\\Windows\\System32\\WindowsPowerShell')) {
+            if (fs.existsSync('C:\\Windows\\System32\\WindowsPowerShell')) {
                 shell = 'powershell';
             }
-            else {shell = 'cmd';}
+            else { shell = 'cmd'; }
         }
 
         const externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
-        
+
         if (!fs.existsSync(path.join(dir, 'bin'))) {
             fs.mkdirSync(path.join(dir, 'bin'));
         }
-        if(!externTerm) {
+        if (!externTerm) {
             this.runInternal(compileCommand ?? '', fileUri, shell, dir);
         }
         else {
@@ -198,7 +204,7 @@ class CodeRunner {
         const pwrshll = shell?.includes('powershell');
         const cmd = shell?.includes('cmd');
         const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
-        exec(`start "ProjCpp" cmd.exe /K "cd /d ${dir} & ${compileCommand} *.cpp -o ${mainExe} & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, {cwd: dir});
+        exec(`start "ProjCpp" cmd.exe /K "cd /d ${dir} & ${compileCommand} *.cpp -o ${mainExe} & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
     }
 }
 export default CodeRunner;
