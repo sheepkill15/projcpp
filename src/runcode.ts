@@ -166,13 +166,6 @@ class CodeRunner {
 
         await vscode.workspace.saveAll();
         const dir = path.dirname(fileUri);
-        let shell: string | undefined = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
-        if (!shell) {
-            if (fs.existsSync('C:\\Windows\\System32\\WindowsPowerShell')) {
-                shell = 'powershell';
-            }
-            else { shell = 'cmd'; }
-        }
 
         const externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
 
@@ -180,28 +173,26 @@ class CodeRunner {
             fs.mkdirSync(path.join(dir, 'bin'));
         }
         if (!externTerm) {
-            this.runInternal(compileCommand ?? '', fileUri, shell, dir);
+            this.runInternal(compileCommand ?? '', fileUri, dir);
         }
         else {
-            this.runExternal(compileCommand ?? '', fileUri, shell, dir);
+            this.runExternal(compileCommand ?? '', fileUri, dir);
         }
     }
 
-    async runInternal(compileCommand: string, fileUri: string, shell: string, dir: string) {
+    async runInternal(compileCommand: string, fileUri: string, dir: string) {
 
         const term = vscode.window.activeTerminal ? vscode.window.activeTerminal : vscode.window.createTerminal();
-        const pwrshll = shell?.includes('powershell');
-        const cmd = shell?.includes('cmd');
-        //term.sendText(`cd "${dir}"`, true);
-        const mainExe = `bin${(this.isWin && (pwrshll || cmd) ? '\\' : '/')}${this.isWin ? 'main.exe' : 'main.a'}`;
-        term.sendText(`${this.isWin && pwrshll ? '&' : ''} ${compileCommand} *.cpp -o ${mainExe}`, true);
-        term.sendText((this.isWin && (pwrshll || cmd) ? '.\\' : './') + mainExe, true);
+        const pwrshll = term.name.includes('powershell');
+        const cmd = term.name.includes('cmd');
+        term.sendText(`cd ${(pwrshll || cmd) ? dir : dir.replace(/\\/g, '/')}`, true);
+        const mainExe = `bin${((pwrshll || cmd) ? '\\' : '/')}${this.isWin ? 'main.exe' : 'main.a'}`;
+        term.sendText(`${pwrshll ? '&' : ''} ${compileCommand} *.cpp -o ${mainExe}`, true);
+        term.sendText(((pwrshll || cmd) ? '.\\' : './') + mainExe, true);
         term.show();
     }
 
-    async runExternal(compileCommand: string, fileUri: string, shell: string, dir: string) {
-        const pwrshll = shell?.includes('powershell');
-        const cmd = shell?.includes('cmd');
+    async runExternal(compileCommand: string, fileUri: string, dir: string) {
         const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
         exec(`start "ProjCpp" cmd.exe /K "cd /d ${dir} & ${compileCommand} *.cpp -o ${mainExe} & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
     }
