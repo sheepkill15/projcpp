@@ -18,9 +18,12 @@ class CodeRunner {
 
     initialized: boolean = false;
 
-    constructor() {
+    private outputChannel: vscode.OutputChannel;
+
+    constructor(outpuCh: vscode.OutputChannel) {
         this.isWin = os.platform().indexOf('win') > -1;
         this.init();
+        this.outputChannel = outpuCh;
     }
     async init() {
 
@@ -144,6 +147,25 @@ class CodeRunner {
         return true;
     }
 
+    async compile(compileCommand: string, dir: string): Promise<boolean> {
+        this.outputChannel.clear();
+        try {
+            const { stdout, stderr } = await execPromisified(`${compileCommand} *.cpp -o ${path.join('bin', 'main.exe')}`, { cwd: dir });
+            if (stderr.length > 0) {
+                this.outputChannel.appendLine('Error while compiling:');
+                this.outputChannel.appendLine(stderr);
+                this.outputChannel.show(true);
+                return false;
+            }
+        } catch (e) {
+            this.outputChannel.appendLine('Error while compiling:');
+            this.outputChannel.appendLine(e.stderr);
+            this.outputChannel.show(true);
+            return false;
+        }
+        return true;
+    }
+
     async run(fileUri: string): Promise<void> {
         if (!this.initialized) {
             this.lastRunCommand = fileUri;
@@ -166,7 +188,10 @@ class CodeRunner {
 
         await vscode.workspace.saveAll();
         const dir = path.dirname(fileUri);
-
+        const compiled = await this.compile(compileCommand, dir);
+        if(!compiled) {
+            return;
+        }
         const externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
 
         if (!fs.existsSync(path.join(dir, 'bin'))) {
@@ -187,14 +212,13 @@ class CodeRunner {
         const cmd = term.name.includes('cmd');
         term.sendText(`cd ${(pwrshll || cmd) ? dir : dir.replace(/\\/g, '/')}`, true);
         const mainExe = `bin${((pwrshll || cmd) ? '\\' : '/')}${this.isWin ? 'main.exe' : 'main.a'}`;
-        term.sendText(`${pwrshll ? '&' : ''} ${compileCommand} *.cpp -o ${mainExe}`, true);
         term.sendText(((pwrshll || cmd) ? '.\\' : './') + mainExe, true);
         term.show();
     }
 
     async runExternal(compileCommand: string, fileUri: string, dir: string) {
         const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
-        exec(`start "ProjCpp" cmd.exe /K "cd /d ${dir} & ${compileCommand} *.cpp -o ${mainExe} & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
+        exec(`start "ProjCpp" cmd.exe /K "cd /d ${dir} & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
     }
 }
 export default CodeRunner;

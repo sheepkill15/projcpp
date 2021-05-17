@@ -9,7 +9,9 @@ import { SidebarProvider } from './SidebarProvider';
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-	const runner = new CodeRunner();
+	const outputChannel = vscode.window.createOutputChannel("ProjCpp");
+
+	const runner = new CodeRunner(outputChannel);
 
 	const sidebarProvider = new SidebarProvider(context);
 
@@ -32,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const disposable = vscode.commands.registerCommand('projcpp.runCode', () => {
 		// The code you place here will be executed every time your command is executed
 		if (vscode.window.activeTextEditor) { 
-			runner.run(vscode.window.activeTextEditor?.document.fileName); 
+			runner.run(vscode.window.activeTextEditor?.document.uri.fsPath); 
 		}
 	});
 	context.subscriptions.push(disposable);
