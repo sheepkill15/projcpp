@@ -5,6 +5,17 @@ All notable changes to the "ProjCpp" extension will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2021-05-17
+### Added
+- The option to allow folders to be opened side-by-side in the workspace (and the editor not to be refreshed each time)
+- Compilation errors now show inside Outputs -> ProjCpp for clarity, and program is only run if compilation is successful
+
+### Fixed
+- However you open whatever terminal, the commands are now passed correctly
+
+### Bugs
+- When an "Outputs" panel has focus, the code running doesn't work (receives wrong filepath) 
+
 ## [1.2.2] - 2021-04-19
 ### HOTFIX
 - Allow migrating from old extension version to new one without breaking the compile command
