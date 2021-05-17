@@ -14,7 +14,7 @@ int main()
 }
 `;
 
-export const createProject = (project: { name: string; path: string; }) => {
+export const createProject = async (project: { name: string; path: string; }) => {
     if (!fs.existsSync(project.path)) {
         fs.mkdirSync(project.path, { recursive: true });
         fs.appendFileSync(path_module.join(project.path, 'main.cpp'), sampleFile);
@@ -22,7 +22,14 @@ export const createProject = (project: { name: string; path: string; }) => {
     else {
         fs.mkdirSync(project.path, { recursive: true });
     }
-    vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(project.path));
+    const multipleFolders: boolean = await vscode.workspace.getConfiguration().get("conf.projcpp.multipleFolders") ?? false;
+    
+    if(!multipleFolders) {
+        vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(project.path));
+    }
+    else {
+        vscode.workspace.updateWorkspaceFolders(0, 0, {uri: vscode.Uri.file(project.path)});
+    }
 };
 
 export const getProjects = (path: string, callback: (path: string) => void, skip: boolean = true) => {

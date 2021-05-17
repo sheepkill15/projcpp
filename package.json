@@ -64,6 +64,17 @@
 						"scope": "application"
 					}
 				}
+			},
+			{
+				"title": "Multiple folders",
+				"properties": {
+					"conf.projcpp.multipleFolders": {
+						"type": "boolean",
+						"description": "Allow multiple folders to be open in the workspace at once",
+						"scope": "application",
+						"default": "false"
+					}
+				}
 			}
 		],
 		"commands": [
