@@ -216,10 +216,19 @@ class CodeRunner {
 
     async runInternal(compileCommand: string, fileUri: string, dir: string) {
         const term = vscode.window.activeTerminal ?? vscode.window.createTerminal();
-        const defaultTerm = await vscode.workspace.getConfiguration().get(this.isWin ? 'terminal.integrated.shell.windows' : 'bash') as string;
-
-        const pwrshll = term.name.includes('powershell') || (term.name === '' && defaultTerm.includes('powershell'));
-        const cmd = term.name.includes('cmd') || (term.name === '' && defaultTerm.includes('cmd'));
+        let shell: string | undefined;
+        if(term.name === '') {
+            shell = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
+            if (!shell) {
+                if (fs.existsSync('C:\\Windows\\System32\\WindowsPowerShell')) {
+                    shell = 'powershell';
+                }
+            else { shell = 'cmd'; }
+            }
+        }
+        
+        const pwrshll = term.name.includes('powershell') || (term.name === '' && shell?.includes('powershell'));
+        const cmd = term.name.includes('cmd') || (term.name === '' && shell?.includes('cmd'));
         term.sendText(`cd "${(pwrshll || cmd) ? dir : dir.replace(/\\/g, '/')}"`, true);
         const mainExe = `bin${((pwrshll || cmd) ? '\\' : '/')}${this.isWin ? 'main.exe' : 'main.a'}`;
         term.sendText(((pwrshll || cmd) ? '.\\' : './') + mainExe, true);
