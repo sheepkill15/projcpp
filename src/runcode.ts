@@ -187,16 +187,25 @@ class CodeRunner {
         const compileCommand: string = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand") ?? '';
 
         await vscode.workspace.saveAll();
+        if(path.extname(fileUri) === '') {
+            this.outputChannel.clear();
+            this.outputChannel.appendLine(`Seems like one of these was focused.\nPlease click inside your file.`);
+            this.outputChannel.show(true);
+            return;
+        }
+
         const dir = path.dirname(fileUri);
+        
+        if (!fs.existsSync(path.join(dir, 'bin'))) {
+            fs.mkdirSync(path.join(dir, 'bin'));
+        }
+
         const compiled = await this.compile(compileCommand, dir);
         if(!compiled) {
             return;
         }
         const externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
 
-        if (!fs.existsSync(path.join(dir, 'bin'))) {
-            fs.mkdirSync(path.join(dir, 'bin'));
-        }
         if (!externTerm) {
             this.runInternal(compileCommand ?? '', fileUri, dir);
         }
@@ -206,11 +215,14 @@ class CodeRunner {
     }
 
     async runInternal(compileCommand: string, fileUri: string, dir: string) {
-
-        const term = vscode.window.activeTerminal ? vscode.window.activeTerminal : vscode.window.createTerminal();
+        let term = vscode.window.activeTerminal;
+        if(!term) {
+            term = vscode.window.createTerminal();
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
         const pwrshll = term.name.includes('powershell');
         const cmd = term.name.includes('cmd');
-        term.sendText(`cd ${(pwrshll || cmd) ? dir : dir.replace(/\\/g, '/')}`, true);
+        term.sendText(`cd "${(pwrshll || cmd) ? dir : dir.replace(/\\/g, '/')}"`, true);
         const mainExe = `bin${((pwrshll || cmd) ? '\\' : '/')}${this.isWin ? 'main.exe' : 'main.a'}`;
         term.sendText(((pwrshll || cmd) ? '.\\' : './') + mainExe, true);
         term.show();
@@ -218,7 +230,7 @@ class CodeRunner {
 
     async runExternal(compileCommand: string, fileUri: string, dir: string) {
         const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
-        exec(`start "ProjCpp" cmd.exe /K "cd /d ${dir} & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
+        exec(`start "ProjCpp" cmd.exe /K "cd /d "${dir}" & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
     }
 }
 export default CodeRunner;
