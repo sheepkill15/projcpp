@@ -5,6 +5,12 @@ All notable changes to the "ProjCpp" extension will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2021-05-19
+### Fixed
+- Incorrectly cd'ing into directory without ""
+- Trying to compile when OUTPUT panel is focused
+- Not getting correct terminal name when it's created
+
 ## [1.3.0] - 2021-05-17
 ### Added
 - The option to allow folders to be opened side-by-side in the workspace (and the editor not to be refreshed each time)
