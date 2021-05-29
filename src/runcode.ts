@@ -12,8 +12,6 @@ class CodeRunner {
 
     private lastRunCommand: string | null = null;
 
-    private isWin: boolean;
-
     private pathAdded: boolean = false;
 
     initialized: boolean = false;
@@ -21,36 +19,37 @@ class CodeRunner {
     private outputChannel: vscode.OutputChannel;
 
     constructor(outpuCh: vscode.OutputChannel) {
-        this.isWin = os.platform().indexOf('win') > -1;
         this.outputChannel = outpuCh;
         this.init();
     }
     async init() {
-
-        const where = this.isWin ? 'where' : 'whereis';
+        if(this.pathAdded) {
+            return;
+        }
         const savedCommand: string | undefined = vscode.workspace.getConfiguration().get('conf.projcpp.compileCommand');
-        const modifiedCommand: string = await helper.findCompiler();
         if (savedCommand) {
-            if (fs.existsSync(savedCommand.replace(/\"/g, '')) || await helper.checkIfCommand(where + ' ' + savedCommand)) {
+            if (await helper.checkIfCommand(savedCommand)) {
                 this.finishInit();
                 return;
             }
         }
+        const modifiedCommand: string = await helper.findCompiler();
+        if (helper.isWin && (modifiedCommand.includes(path.sep)) && !process.env.PATH?.includes(modifiedCommand)) {
+            const winDirName = path.dirname(modifiedCommand);
+            await helper.addToPath(winDirName);
+            vscode.window.showInformationMessage('Added compiler to path. Please restart VSCode for this to work (only needed one time)');
+            this.pathAdded = true;
+            return;
+        }
+        await vscode.workspace.getConfiguration().update('conf.projcpp.compileCommand', modifiedCommand, vscode.ConfigurationTarget.Global);
         
-        await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", modifiedCommand, vscode.ConfigurationTarget.Global);
         this.finishInit();
     }
 
     async finishInit(): Promise<void> {
         const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand");
         if (!compileCommand) { return; }
-        const winDirName = path.dirname(compileCommand.replace(/\"/g, ''));
-        if (!this.pathAdded && this.isWin && (compileCommand.includes(path.sep)) && !process.env.PATH?.includes(winDirName)) {
-
-            await helper.addToPath(winDirName);
-            vscode.window.showInformationMessage('Added compiler to path. Please restart VSCode for this to work (only needed one time)');
-            this.pathAdded = true;
-        }
+        
 
         this.initialized = true;
         if (this.lastRunCommand) {
@@ -58,37 +57,29 @@ class CodeRunner {
         }
     }
 
-    
-
     async run(fileUri: string): Promise<void> {
         if (!this.initialized) {
             this.lastRunCommand = fileUri;
             return;
         } else { this.lastRunCommand = null; }
-        {
-            const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand") ?? '';
-            if (helper.validateCompileCommand(compileCommand)) {
-                await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", undefined, vscode.ConfigurationTarget.Global);
-                this.initialized = false;
-                this.lastRunCommand = fileUri;
-                this.init();
-                return;
-            }
-            if (!compileCommand.endsWith('"') && fs.existsSync(compileCommand)) {
-                await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", (compileCommand.startsWith('"') ? '' : '"') + compileCommand + (compileCommand.endsWith('"') ? '' : '"'), vscode.ConfigurationTarget.Global);
-            }
+        const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand") ?? '';
+        if (!helper.checkIfCommand(compileCommand)) {
+            await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", undefined, vscode.ConfigurationTarget.Global);
+            this.initialized = false;
+            this.lastRunCommand = fileUri;
+            this.init();
+            return;
         }
-        const compileCommand: string = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand") ?? '';
-
         await vscode.workspace.saveAll();
-        if(path.extname(fileUri) === '') {
+
+        const dir = path.dirname(fileUri);
+
+        if(dir === '.') {
             this.outputChannel.clear();
             this.outputChannel.appendLine(`Seems like one of these was focused.\nPlease click inside your file.`);
             this.outputChannel.show(true);
             return;
         }
-
-        const dir = path.dirname(fileUri);
         
         if (!fs.existsSync(path.join(dir, 'bin'))) {
             fs.mkdirSync(path.join(dir, 'bin'));
@@ -99,9 +90,7 @@ class CodeRunner {
             this.outputChannel.clear();
             this.outputChannel.appendLine('Error while compiling:');
             this.outputChannel.appendLine(compiled);
-        }
-        else {
-            return;
+            this.outputChannel.show();
         }
         const externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
 
@@ -129,13 +118,13 @@ class CodeRunner {
         const pwrshll = term.name.includes('powershell') || (term.name === '' && shell?.includes('powershell'));
         const cmd = term.name.includes('cmd') || (term.name === '' && shell?.includes('cmd'));
         term.sendText(`cd "${(pwrshll || cmd) ? dir : dir.replace(/\\/g, '/')}"`, true);
-        const mainExe = `bin${((pwrshll || cmd) ? '\\' : '/')}${this.isWin ? 'main.exe' : 'main.a'}`;
+        const mainExe = `bin${((pwrshll || cmd) ? '\\' : '/')}${helper.isWin ? 'main.exe' : 'main.a'}`;
         term.sendText(((pwrshll || cmd) ? '.\\' : './') + mainExe, true);
         term.show();
     }
 
     async runExternal(dir: string) {
-        const mainExe = path.join('bin', this.isWin ? 'main.exe' : 'main.a');
+        const mainExe = path.join('bin', helper.isWin ? 'main.exe' : 'main.a');
         exec(`start "ProjCpp" cmd.exe /K "cd /d "${dir}" & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
     }
 }

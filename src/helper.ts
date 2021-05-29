@@ -11,9 +11,12 @@ import * as path from 'path';
 
 const execPromisified = promisify(exec);
 
+export const isWin = platform().indexOf('win') > -1;
+const where = isWin ? 'where' : 'whereis'; 
+
 export const checkIfCommand = async (command: string): Promise<boolean> => {
     try {
-        const { stdout, stderr } = await execPromisified(command);
+        const { stdout, stderr } = await execPromisified(`${where} ${command}`);
         if (stderr.length > 0) { console.error(stderr); }
     } catch (e) {
         return false;
@@ -23,22 +26,20 @@ export const checkIfCommand = async (command: string): Promise<boolean> => {
 
 export const findCompiler = async (): Promise<string> => {
     let modifiedCommand: string = '';
-    const isWin = platform().indexOf('win') > -1;
-    const where = isWin ? 'where' : 'whereis';
-    if (await checkIfCommand(where + ' g++')) {
+    if (await checkIfCommand('g++')) {
         modifiedCommand = 'g++';
         vscode.window.showInformationMessage('Found g++!');
     }
-    else if (await checkIfCommand(where + ' gcc')) {
+    else if (await checkIfCommand('gcc')) {
         modifiedCommand = 'gcc';
         vscode.window.showInformationMessage('Found gcc!');
     }
     else if (fs.existsSync('C:\\Program Files (x86)\\CodeBlocks\\MinGW')) {
-        modifiedCommand = '"C:\\Program Files (x86)\\CodeBlocks\\MinGW\\bin\\g++.exe"';
+        modifiedCommand = 'C:\\Program Files (x86)\\CodeBlocks\\MinGW\\bin\\g++.exe';
         vscode.window.showInformationMessage('Found 32bit CodeBlocks with MinGW!');
     }
     else if (fs.existsSync('C:\\Program Files\\CodeBlocks\\MinGW')) {
-        modifiedCommand = '"C:\\Program Files\\CodeBlocks\\MinGW\\bin\\g++.exe"';
+        modifiedCommand = 'C:\\Program Files\\CodeBlocks\\MinGW\\bin\\g++.exe';
         vscode.window.showInformationMessage('Found CodeBlocks with MinGW!');
     }
     else {
@@ -54,7 +55,7 @@ export const findCompiler = async (): Promise<string> => {
                     canSelectMany: false,
                     canSelectFiles: true,
                 });
-            if (path) { modifiedCommand = `"${path[0].fsPath}"`; }
+            if (path) { modifiedCommand = path[0].fsPath; }
             else { return modifiedCommand; }
         }
         else if (response === 'Download') {
@@ -97,7 +98,7 @@ export const findCompiler = async (): Promise<string> => {
             });
 
             file.close();
-            modifiedCommand = '"' + vscode.Uri.joinPath(installPath[0], 'mingw64/bin/g++.exe').fsPath + '"';
+            modifiedCommand = vscode.Uri.joinPath(installPath[0], 'mingw64/bin/g++.exe').fsPath;
         }
         else {
             return modifiedCommand;
@@ -120,11 +121,4 @@ export const compile = async (compileCommand: string, dir: string): Promise<stri
         return e.stderr;
     }
     return '';
-};
-
-export const validateCompileCommand = async (command: string): Promise<boolean> => {
-    if (!command || (command && (command.includes(path.sep)) && (!fs.existsSync(command.replace(/\"/g, '')) && !await checkIfCommand(command)))) {
-        return false;
-    }
-    return true;
 };
