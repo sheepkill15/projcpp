@@ -28,6 +28,7 @@ export const createProject = async (project: { name: string; path: string; }) =>
         vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(project.path));
     }
     else {
+        vscode.commands.executeCommand('workbench.files.action.focusFilesExplorer');
         vscode.workspace.updateWorkspaceFolders(0, 0, {uri: vscode.Uri.file(project.path)});
     }
 };
