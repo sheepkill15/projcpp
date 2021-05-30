@@ -39,10 +39,9 @@
         for(let i = 0; i < projects.length; i++) {
             if(projects[i].name === newValue) return;
         }
-        addProject(defaultLocation + text);
         tsvscode.postMessage({
             command: 'create-project',
-            value: projects[0]
+            value: {name: newValue, path: defaultLocation + text}
         });
     }
 
