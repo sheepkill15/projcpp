@@ -1,13 +1,10 @@
 import * as vscode from 'vscode';
-import * as os from 'os';
-import { promisify } from 'util';
 import { exec } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 
 import * as helper from './helper';
 
-const execPromisified = promisify(exec);
 class CodeRunner {
 
     private lastRunCommand: string | null = null;
@@ -24,6 +21,9 @@ class CodeRunner {
     }
     async init() {
         if(this.pathAdded) {
+            this.outputChannel.clear();
+            this.outputChannel.appendLine('Please restart VSCode to finish setting up.');
+            this.outputChannel.show();
             return;
         }
         const savedCommand: string | undefined = vscode.workspace.getConfiguration().get('conf.projcpp.compileCommand');
@@ -33,7 +33,7 @@ class CodeRunner {
                 return;
             }
         }
-        const modifiedCommand: string = await helper.findCompiler();
+        const modifiedCommand: string = await helper.findCompiler(this.outputChannel);
         if (helper.isWin && (modifiedCommand.includes(path.sep)) && !process.env.PATH?.includes(modifiedCommand)) {
             const winDirName = path.dirname(modifiedCommand);
             await helper.addToPath(winDirName);

@@ -24,7 +24,7 @@ export const checkIfCommand = async (command: string): Promise<boolean> => {
     return true;
 };
 
-export const findCompiler = async (): Promise<string> => {
+export const findCompiler = async (outputChannel: vscode.OutputChannel): Promise<string> => {
     let modifiedCommand: string = '';
     if (await checkIfCommand('g++')) {
         modifiedCommand = 'g++';
@@ -61,12 +61,24 @@ export const findCompiler = async (): Promise<string> => {
         else if (response === 'Download') {
             const file = fs.createWriteStream(process.env.USERPROFILE + '/Downloads/mingw.7z');
             vscode.window.showInformationMessage('Downloading...');
+            let receivedBytes = 0;
+            let totalBytes = 0;
+            outputChannel.clear();
+            outputChannel.show();
+            outputChannel.appendLine('Download progress:');
             const request = await new Promise<boolean>((resolve) => {
                 https.get('https://deac-ams.dl.sourceforge.net/project/mingw-w64/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z',
                     (response) => {
                         response.pipe(file);
                         response.on('end', () => resolve(true));
                         response.on('error', () => resolve(false));
+                        response.on('data', (chunk) => {
+                            receivedBytes += chunk.length;
+                            outputChannel.append(`${((receivedBytes * 100) / totalBytes).toFixed(2)} %${isWin ? '\033[0G' : '\r'}`);
+                        });
+                        response.on('response', (data) => {
+                            totalBytes = parseInt(data.headers['content-length']);
+                        });
                     });
             });
             if (!request) {
@@ -86,6 +98,10 @@ export const findCompiler = async (): Promise<string> => {
             if (!installPath) { return modifiedCommand; }
             const pathTo7zip = sevenBin.path7za;
             vscode.window.showInformationMessage('Extracting...');
+            outputChannel.clear();
+            outputChannel.show();
+            outputChannel.appendLine('Extract progress:');
+            let doneBytes = 0;
             await new Promise<void>((resolve) => {
                 const myStream = extractFull(file.path.toString(), installPath[0].fsPath, {
                     $bin: pathTo7zip
@@ -94,6 +110,10 @@ export const findCompiler = async (): Promise<string> => {
                 myStream.on('error', (err) => {
                     console.log(err);
                     resolve();
+                });
+                myStream.on('data', (data) => {
+                    doneBytes += data.size ?? 0;
+                    outputChannel.append(`${((doneBytes * 100) / myStream.readableLength).toFixed(2)} %${isWin ? '\033[0G' : '\r'}`);
                 });
             });
 
