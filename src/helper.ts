@@ -69,15 +69,13 @@ export const findCompiler = async (outputChannel: vscode.OutputChannel): Promise
             const request = await new Promise<boolean>((resolve) => {
                 https.get('https://deac-ams.dl.sourceforge.net/project/mingw-w64/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/8.1.0/threads-posix/seh/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z',
                     (response) => {
+                        totalBytes = parseInt(response.headers['content-length'] ?? '1');
                         response.pipe(file);
                         response.on('end', () => resolve(true));
                         response.on('error', () => resolve(false));
                         response.on('data', (chunk) => {
                             receivedBytes += chunk.length;
-                            outputChannel.append(`${((receivedBytes * 100) / totalBytes).toFixed(2)} %${isWin ? '\033[0G' : '\r'}`);
-                        });
-                        response.on('response', (data) => {
-                            totalBytes = parseInt(data.headers['content-length']);
+                            outputChannel.appendLine(`${((receivedBytes * 100) / totalBytes).toFixed(2)} %`);
                         });
                     });
             });
@@ -101,19 +99,18 @@ export const findCompiler = async (outputChannel: vscode.OutputChannel): Promise
             outputChannel.clear();
             outputChannel.show();
             outputChannel.appendLine('Extract progress:');
-            let doneBytes = 0;
             await new Promise<void>((resolve) => {
                 const myStream = extractFull(file.path.toString(), installPath[0].fsPath, {
-                    $bin: pathTo7zip
+                    $bin: pathTo7zip,
+                    $progress: true,
                 });
                 myStream.on('end', resolve);
                 myStream.on('error', (err) => {
                     console.log(err);
                     resolve();
                 });
-                myStream.on('data', (data) => {
-                    doneBytes += data.size ?? 0;
-                    outputChannel.append(`${((doneBytes * 100) / myStream.readableLength).toFixed(2)} %${isWin ? '\033[0G' : '\r'}`);
+                myStream.on('progress', (progress) => {
+                    outputChannel.appendLine(`${progress.percent} %`);
                 });
             });
 
