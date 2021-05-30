@@ -5,6 +5,19 @@ All notable changes to the "ProjCpp" extension will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] = 2021-05-30
+### Added
+- 'ProjCpp: Open projects' now correctly opens the same view as the sidebar
+- Progress when downloading / extracting the compiler
+
+### Fixed
+- Default value of 'Multiple folders' setting is now false
+- When adding a new folder to the workspace, the explorer is focused
+- When path has already been notified, the user is enforced to restart
+
+### Changed
+- Compile command now can't be a file, since this is unnecessary
+
 ## [1.3.3] - 2021-05-19
 ### Fixed
 - Incorrectly cd'ing into directory without ""
