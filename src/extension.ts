@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);
 
 	context.subscriptions.push(vscode.commands.registerCommand('projcpp.projects', () => {
-		ProjectsPanel.createOrShow(context.extensionUri);
+		ProjectsPanel.createOrShow(context.extensionUri, context);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('projcpp.refresh', async () => {

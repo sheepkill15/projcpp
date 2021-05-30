@@ -63,7 +63,7 @@ class CodeRunner {
             return;
         } else { this.lastRunCommand = null; }
         const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand") ?? '';
-        if (!helper.checkIfCommand(compileCommand)) {
+        if (!await helper.checkIfCommand(compileCommand)) {
             await vscode.workspace.getConfiguration().update("conf.projcpp.compileCommand", undefined, vscode.ConfigurationTarget.Global);
             this.initialized = false;
             this.lastRunCommand = fileUri;

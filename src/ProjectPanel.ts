@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import { createProject, getProjects } from './ProjectManager';
 
 function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
 	return {
@@ -24,9 +26,10 @@ class ProjectsPanel {
 
 	private readonly _panel: vscode.WebviewPanel;
 	private readonly _extensionUri: vscode.Uri;
+	private readonly _context: vscode.ExtensionContext;
 	private _disposables: vscode.Disposable[] = [];
 
-	public static createOrShow(extensionUri: vscode.Uri) {
+	public static createOrShow(extensionUri: vscode.Uri, _context: vscode.ExtensionContext) {
 		const column = vscode.window.activeTextEditor
 			? vscode.window.activeTextEditor.viewColumn
 			: undefined;
@@ -45,7 +48,7 @@ class ProjectsPanel {
 			getWebviewOptions(extensionUri),
 		);
 
-		ProjectsPanel.currentPanel = new ProjectsPanel(panel, extensionUri);
+		ProjectsPanel.currentPanel = new ProjectsPanel(panel, extensionUri, _context);
 	}
 
     public static kill() {
@@ -53,13 +56,14 @@ class ProjectsPanel {
         ProjectsPanel.currentPanel = undefined;
       }
 
-	public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
-		ProjectsPanel.currentPanel = new ProjectsPanel(panel, extensionUri);
+	public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, _context: vscode.ExtensionContext) {
+		ProjectsPanel.currentPanel = new ProjectsPanel(panel, extensionUri, _context);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, _context: vscode.ExtensionContext) {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
+		this._context = _context;
 
 		// Set the webview's initial html content
 		this._update();
@@ -81,11 +85,57 @@ class ProjectsPanel {
 
 		// Handle messages from the webview
 		this._panel.webview.onDidReceiveMessage(
-			message => {
-				switch (message.command) {
-					case 'alert':
-						vscode.window.showErrorMessage(message.text);
-						return;
+			async (data: {command: string; value: any})=> {
+				switch(data.command) {
+					case 'onInfo': {
+						if(!data.value) {
+							return;
+						}
+						vscode.window.showInformationMessage(data.value);
+						break;
+					}
+					case 'onError': {
+						if(!data.value) {
+							return;
+						}
+						vscode.window.showErrorMessage(data.value);
+						break;
+					}
+					case 'askFolder': {
+						const folder = await vscode.window.showOpenDialog({canSelectFolders: true, canSelectFiles: false, canSelectMany: false});
+						if(folder) {
+							this._panel?.webview.postMessage({
+								command: 'giveFolder',
+								value: folder[0].fsPath,
+							});
+							getProjects(folder[0].fsPath, (path) => {
+								this._panel?.webview.postMessage({
+									command: 'add-project',
+									value: path,
+								});
+							});
+							this._context.globalState.update('projcpp.default-location', path.join(folder[0].fsPath, '/'));
+						}
+						break;
+					}
+					case 'create-project': {
+						if(!data.value) {
+							return;
+						}
+						createProject(data.value);
+						break;
+					}
+					case 'init': {
+						if(!data.value) {
+							return;
+						}
+						getProjects(data.value, (path) => {
+							this._panel?.webview.postMessage({
+								command: 'add-project',
+								value: path,
+							});
+						});
+					}
 				}
 			},
 			null,
@@ -120,23 +170,22 @@ class ProjectsPanel {
 	}
 
 	private _getHtmlForWebview(webview: vscode.Webview) {
-		// Local path to main script run in the webview
-		const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'dist/compiled', 'Projects.js');
+		// Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
+		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'compiled/sidebar.js'));
+		const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'dist', 'compiled/sidebar.css'));
 
-		// And the uri we use to load this script in the webview
-		const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
+		// Do the same for the stylesheet.
+		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css'));
+		const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css'));
 
-		// Local path to css styles
-		const styleResetPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css');
-		const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css');
-
-		// Uri to load styles into webview
-		const stylesResetUri = webview.asWebviewUri(styleResetPath);
-		const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
-
-		// Use a nonce to only allow specific scripts to be run
+		// Use a nonce to only allow a specific script to be run.
 		const nonce = getNonce();
 
+		const userPath = process.env.USERPROFILE ?? 'C:\\Users\\Public';
+
+		let defaultLocation: string = this._context.globalState.get('projcpp.default-location') ?? path.join(userPath, '/Downloads', '/');
+		defaultLocation = defaultLocation.replace(/\\/g, '\\\\');
+		console.log(defaultLocation);
 		return `<!DOCTYPE html>
 			<html lang="en">
 			<head>
@@ -145,15 +194,20 @@ class ProjectsPanel {
 					Use a content security policy to only allow loading images from https or from our extension directory,
 					and only allow scripts that have a specific nonce.
 				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link href="${stylesResetUri}" rel="stylesheet">
-				<link href="${stylesMainUri}" rel="stylesheet">
-				<title>Cat Coding</title>
+				<link href="${styleResetUri}" rel="stylesheet">
+				<link href="${styleVSCodeUri}" rel="stylesheet">
+				<link href="${styleMainUri}" rel="stylesheet">
+				<script nonce=${nonce}>
+                    const tsvscode = acquireVsCodeApi();
+					const savedDefaultLocation = "${defaultLocation}";
+					const separator = "${path.sep.replace(/\\/g, '\\\\')}"
+                </script>
 			</head>
 			<body>
+				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
-            <script src="${scriptUri}" nonce="${nonce}">
 			</html>`;
 	}
 }
