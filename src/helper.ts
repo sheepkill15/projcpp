@@ -130,7 +130,7 @@ export const addToPath = async (dir: string) => {
 
 export const compile = async (compileCommand: string, dir: string): Promise<string> => {
     try {
-        const { stdout, stderr } = await execPromisified(`${compileCommand} *.cpp -o ${path.join('bin', 'main.exe')}`, { cwd: dir });
+        const { stdout, stderr } = await execPromisified(`${compileCommand} *.cpp -o ${path.join('bin', isWin ? 'main.exe' : 'main')}`, { cwd: dir });
         if (stderr.length > 0) {
             return stderr;
         }

@@ -20,7 +20,7 @@ class CodeRunner {
         this.init();
     }
     async init() {
-        if(this.pathAdded) {
+        if (this.pathAdded) {
             this.outputChannel.clear();
             this.outputChannel.appendLine('Please restart VSCode to finish setting up.');
             this.outputChannel.show();
@@ -42,14 +42,14 @@ class CodeRunner {
             return;
         }
         await vscode.workspace.getConfiguration().update('conf.projcpp.compileCommand', modifiedCommand, vscode.ConfigurationTarget.Global);
-        
+
         this.finishInit();
     }
 
     async finishInit(): Promise<void> {
         const compileCommand: string | undefined = await vscode.workspace.getConfiguration().get("conf.projcpp.compileCommand");
         if (!compileCommand) { return; }
-        
+
 
         this.initialized = true;
         if (this.lastRunCommand) {
@@ -74,19 +74,19 @@ class CodeRunner {
 
         const dir = path.dirname(fileUri);
 
-        if(dir === '.') {
+        if (dir === '.') {
             this.outputChannel.clear();
             this.outputChannel.appendLine(`Seems like one of these was focused.\nPlease click inside your file.`);
             this.outputChannel.show(true);
             return;
         }
-        
+
         if (!fs.existsSync(path.join(dir, 'bin'))) {
             fs.mkdirSync(path.join(dir, 'bin'));
         }
 
         const compiled: string = await helper.compile(compileCommand, dir);
-        if(compiled !== '') {
+        if (compiled !== '') {
             this.outputChannel.clear();
             this.outputChannel.appendLine('Error while compiling:');
             this.outputChannel.appendLine(compiled);
@@ -105,26 +105,31 @@ class CodeRunner {
     async runInternal(dir: string) {
         const term = vscode.window.activeTerminal ?? vscode.window.createTerminal();
         let shell: string | undefined;
-        if(term.name === '') {
-            shell = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
-            if (!shell) {
-                if (fs.existsSync('C:\\Windows\\System32\\WindowsPowerShell')) {
-                    shell = 'powershell';
+        if (term.name === '') {
+            if (!helper.isWin) {
+                shell = 'bash';
+            }
+            else {
+                shell = vscode.workspace.getConfiguration().get('terminal.integrated.shell.windows');
+                if (!shell) {
+                    if (fs.existsSync('C:\\Windows\\System32\\WindowsPowerShell')) {
+                        shell = 'powershell';
+                    }
+                    else { shell = 'cmd'; }
                 }
-            else { shell = 'cmd'; }
             }
         }
-        
+
         const pwrshll = term.name.includes('powershell') || (term.name === '' && shell?.includes('powershell'));
         const cmd = term.name.includes('cmd') || (term.name === '' && shell?.includes('cmd'));
         term.sendText(`cd "${(pwrshll || cmd) ? dir : dir.replace(/\\/g, '/')}"`, true);
-        const mainExe = `bin${((pwrshll || cmd) ? '\\' : '/')}${helper.isWin ? 'main.exe' : 'main.a'}`;
+        const mainExe = `bin${((pwrshll || cmd) ? '\\' : '/')}${helper.isWin ? 'main.exe' : 'main'}`;
         term.sendText(((pwrshll || cmd) ? '.\\' : './') + mainExe, true);
         term.show();
     }
 
     async runExternal(dir: string) {
-        const mainExe = path.join('bin', helper.isWin ? 'main.exe' : 'main.a');
+        const mainExe = path.join('bin', helper.isWin ? 'main.exe' : 'main');
         exec(`start "ProjCpp" cmd.exe /K "cd /d "${dir}" & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
     }
 }

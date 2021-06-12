@@ -31,7 +31,7 @@
 - The "Create project" button <b>(6)</b> creates a folder (recursively) with the name and location from the previous inputs and creates a "main.cpp" sample file <b>(2)</b>
 - Below that mini-form is a list of the projects in the root project directory (these are looked recursively as well, meaning that if a directory only has more directories inside, and no files, then the extension looks into those directories as well) in no particular order <b>(7)</b>
 - There is a search field to filter the projects by path <b>(8)</b>
-- <i>This part is only working on Windows</i>
+- <i>This part is now working on both Windows and Linux</i>
 
 ## Inspiration <a name="inspiration"></a>
 - At school, we were introduced to programming with the help of [CodeBlocks](https://www.codeblocks.org/), which is a fine program, but it's a bit unstable and ugly for my uses.

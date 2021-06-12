@@ -5,7 +5,12 @@ All notable changes to the "ProjCpp" extension will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] = 2021-05-30
+## [1.4.1] - 2021-06-12
+### Fixed
+- Linux support for both the runner and project manager
+- Typo in previous changelog
+
+## [1.4.0] - 2021-05-30
 ### Added
 - 'ProjCpp: Open projects' now correctly opens the same view as the sidebar
 - Progress when downloading / extracting the compiler
