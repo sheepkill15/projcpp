@@ -3,7 +3,7 @@
 	"publisher": "simonaron",
 	"displayName": "ProjCpp",
 	"description": "C++ project manager and build helper",
-	"version": "1.4.1",
+	"version": "1.5.0",
 	"icon": "media/project_icon.png",
 	"repository": {
 		"type": "git",
@@ -20,6 +20,7 @@
 		"onCommand:projcpp.projects",
 		"onCommand:projcpp.refresh",
 		"onCommand:projcpp.addProject",
+		"onCommand:projcpp.createItem",
 		"onView:projcpp-sidebar"
 	],
 	"main": "./dist/extension.js",
@@ -81,7 +82,10 @@
 			{
 				"command": "projcpp.runCode",
 				"title": "Run code",
-				"icon": {"dark": "./media/play-outline.svg", "light": "./media/play-outline.svg"},
+				"icon": {
+					"dark": "./media/play-outline.svg",
+					"light": "./media/play-outline.svg"
+				},
 				"category": "ProjCpp"
 			},
 			{
@@ -98,6 +102,11 @@
 				"command": "projcpp.addProject",
 				"category": "ProjCpp",
 				"title": "Add project"
+			},
+			{
+				"command": "projcpp.createItem",
+				"category": "ProjCpp",
+				"title": "Create item"
 			}
 		],
 		"menus": {
@@ -154,6 +163,7 @@
 	},
 	"dependencies": {
 		"7zip-bin": "^5.1.0",
-		"node-7z": "^2.1.2"
+		"node-7z": "^2.1.2",
+		"snake-case": "^3.0.4"
 	}
 }

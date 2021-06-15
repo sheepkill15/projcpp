@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import openCreateWindow from './creator';
 import ProjectsPanel from './ProjectPanel';
 import CodeRunner from './runcode';
 import { SidebarProvider } from './SidebarProvider';
@@ -61,6 +62,8 @@ export function activate(context: vscode.ExtensionContext) {
 			value: workspaceFolders[0].uri.fsPath,
 		});
 	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('projcpp.createItem', openCreateWindow));
 }
 
 // this method is called when your extension is deactivated
