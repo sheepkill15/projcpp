@@ -24,24 +24,25 @@ const openCreateWindow = async () => {
         return;
     }
     const path = path_module.join(dir, fileName);
+    const classDefinition = `${result} ${className}
+{
+public:
+    ${className}();     //constructor
+    ~${className}();    //destructor
+};`;
 
     if(generate.includes('.h')) {
         const headerFile = `#ifndef ${define}_H
 #define ${define}_H
 
-${result} ${className}
-{
-public:
-    ${className}();     //constructor
-    ~${className}();    //destructor
-};
+${classDefinition}
 
 #endif`;
 
         fs.appendFile(path + '.h', headerFile, () => console.log('Success!'));
     }
     if(generate.includes('.cpp')) {
-        const implFile = `#include "${fileName}.h"
+        const implFile = `${(generate.includes('.h') ? `#include "${fileName}.h"` : classDefinition)}
 
 ${className}::${className}()
 {
