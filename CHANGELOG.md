@@ -5,6 +5,12 @@ All notable changes to the "ProjCpp" extension will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2022-10-03
+### Added
+- Support for normal C
+### Fixed
+- Support for external terminal on linux
+
 ## [1.5.0] - 2021-06-15
 ### Added
 - The command to create the header and/or implementation file of a class and struct of given name

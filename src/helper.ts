@@ -128,9 +128,9 @@ export const addToPath = async (dir: string) => {
     await execPromisified(`for /f "skip=2 tokens=3*" %a in ('reg query HKCU\\Environment /v PATH') do @if [%b]==[] ( @setx PATH "${dir};%~a" ) else ( @setx PATH "${dir};%~a %~b" )`, {shell: 'C:\\Windows\\System32\\cmd.exe'});
 };
 
-export const compile = async (compileCommand: string, dir: string): Promise<string> => {
+export const compile = async (compileCommand: string, dir: string, type: 'c' | 'cpp'): Promise<string> => {
     try {
-        const { stdout, stderr } = await execPromisified(`${compileCommand} *.cpp -o ${path.join('bin', isWin ? 'main.exe' : 'main')}`, { cwd: dir });
+        const { stdout, stderr } = await execPromisified(`${compileCommand} *.${type} -o ${path.join('bin', isWin ? 'main.exe' : 'main')}`, { cwd: dir });
         if (stderr.length > 0) {
             return stderr;
         }

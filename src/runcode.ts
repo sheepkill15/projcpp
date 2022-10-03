@@ -85,7 +85,14 @@ class CodeRunner {
             fs.mkdirSync(path.join(dir, 'bin'));
         }
 
-        const compiled: string = await helper.compile(compileCommand, dir);
+        const type = (() => {
+            if(fileUri.endsWith('.c')) {
+                return 'c';
+            }
+            return 'cpp';
+        })();
+
+        const compiled: string = await helper.compile(compileCommand, dir, type);
         if (compiled !== '') {
             this.outputChannel.clear();
             this.outputChannel.appendLine('Error while compiling:');
@@ -93,7 +100,6 @@ class CodeRunner {
             this.outputChannel.show();
         }
         const externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
-
         if (!externTerm) {
             this.runInternal(dir);
         }
@@ -130,7 +136,11 @@ class CodeRunner {
 
     async runExternal(dir: string) {
         const mainExe = path.join('bin', helper.isWin ? 'main.exe' : 'main');
-        exec(`start "ProjCpp" cmd.exe /K "cd /d "${dir}" & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
+        if(helper.isWin) {
+            exec(`start "ProjCpp" cmd.exe /K "cd /d "${dir}" & ${mainExe} & echo. & echo Program exited with return code %errorlevel% & pause & exit"`, { cwd: dir });
+        } else {
+            exec(`alacritty -e bash -c "cd '${dir}' && ./${mainExe} && echo '' && echo 'Program exited with return code $#.' && read && exit"`);
+        }
     }
 }
 export default CodeRunner;
