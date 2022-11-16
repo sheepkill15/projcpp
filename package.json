@@ -3,7 +3,7 @@
 	"publisher": "simonaron",
 	"displayName": "ProjCpp",
 	"description": "C++ project manager and build helper",
-	"version": "1.6.0",
+	"version": "1.6.1",
 	"icon": "media/project_icon.png",
 	"repository": {
 		"type": "git",

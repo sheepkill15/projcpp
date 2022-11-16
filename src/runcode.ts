@@ -93,11 +93,12 @@ class CodeRunner {
         })();
 
         const compiled: string = await helper.compile(compileCommand, dir, type);
+        this.outputChannel.clear();
         if (compiled !== '') {
-            this.outputChannel.clear();
             this.outputChannel.appendLine('Error while compiling:');
             this.outputChannel.appendLine(compiled);
             this.outputChannel.show();
+            return;
         }
         const externTerm = vscode.workspace.getConfiguration().get("conf.projcpp.externTerm") ?? false;
         if (!externTerm) {
